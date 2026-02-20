@@ -1,18 +1,39 @@
-
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '../../../context/ToastContext';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
-import { useCreateBookMutation, createBookSchema } from '../../../services/booksApi';
+import {
+    useCreateWorkMutation,
+    useCreateEditionMutation,
+    useCreateCopyMutation,
+} from '../../../services/booksApi';
+import { useGetLibrariesQuery } from '../../../services/libraryApi';
 import { useGetMeQuery } from '../../../services/authApi';
-import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../../services/api';
+
+interface AddBookFormData {
+    title: string;
+    originalAuthor: string;
+    genres: string;
+    description: string;
+    isbn: string;
+    format: 'HARDCOVER' | 'PAPERBACK' | 'AUDIOBOOK' | 'EBOOK';
+    publisher: string;
+    publicationYear: number;
+    language: string;
+    replacementCost: number;
+    totalCopies: number;
+    libraryId: string;
+    condition: 'NEW' | 'GOOD' | 'FAIR' | 'DAMAGED';
+}
 
 const AddBookPage = () => {
     const navigate = useNavigate();
     const { data: user } = useGetMeQuery();
+    const { data: libraries } = useGetLibrariesQuery();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (user && user.role !== 'LIBRARIAN' && user.role !== 'ADMIN') {
@@ -20,26 +41,33 @@ const AddBookPage = () => {
         }
     }, [user, navigate]);
 
-    const [createBook, { isLoading, error }] = useCreateBookMutation();
+    const [createWork] = useCreateWorkMutation();
+    const [createEdition] = useCreateEditionMutation();
+    const [createCopy] = useCreateCopyMutation();
+    const { success, error: showError } = useToast();
 
     const {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm({
-        resolver: zodResolver(createBookSchema.omit({ coverImageUrl: true })),
+    } = useForm<AddBookFormData>({
         defaultValues: {
             title: '',
-            author: '',
+            originalAuthor: '',
+            genres: '',
+            description: '',
             isbn: '',
-            totalCopies: 1,
-            genre: '',
+            format: 'HARDCOVER',
             publisher: '',
-            condition: 'GOOD',
-        }
+            publicationYear: new Date().getFullYear(),
+            language: 'English',
+            replacementCost: 20,
+            totalCopies: 1,
+            libraryId: '',
+            condition: 'NEW',
+        },
+        mode: 'onTouched',
     });
-
-    const { success, error: showError } = useToast();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -49,48 +77,75 @@ const AddBookPage = () => {
         }
     };
 
-    interface CreateBookFormData {
-        title: string;
-        author: string;
-        isbn: string;
-        totalCopies: number;
-        genre: string;
-        publisher: string;
-        condition: string;
-    }
-
     const onSubmit = useCallback(
-        async (data: CreateBookFormData) => {
+        async (data: AddBookFormData) => {
+            setIsSubmitting(true);
             try {
-                const formData = new FormData();
-                (Object.keys(data) as Array<keyof CreateBookFormData>).forEach(key => {
-                    formData.append(key, String(data[key]));
+                const workFormData = new FormData();
+                workFormData.append('title', data.title);
+                workFormData.append('originalAuthor', data.originalAuthor);
+                workFormData.append('description', data.description || '');
+                data.genres.split(',').map(g => g.trim()).filter(Boolean).forEach(g => {
+                    workFormData.append('genres[]', g);
                 });
                 if (selectedFile) {
-                    formData.append('coverImage', selectedFile);
+                    workFormData.append('coverImage', selectedFile);
                 }
 
-                await createBook(formData).unwrap();
-                success('Book added to collection!');
+                const workResponse = await createWork(workFormData).unwrap();
+                const workId = workResponse.data?._id || workResponse._id;
+
+                if (!workId) throw new Error("Failed to get Work ID from server");
+
+                const editionFormData = new FormData();
+                editionFormData.append('isbn', data.isbn);
+                editionFormData.append('format', data.format);
+                editionFormData.append('publisher', data.publisher);
+                editionFormData.append('publicationYear', String(data.publicationYear));
+                editionFormData.append('language', data.language);
+                editionFormData.append('replacementCost', String(data.replacementCost));
+
+                const editionResponse = await createEdition({ workId, data: editionFormData }).unwrap();
+                const editionId = editionResponse.data?._id || editionResponse._id;
+
+                if (!editionId) throw new Error("Failed to get Edition ID from server");
+
+                const copyPromises = [];
+                for (let i = 0; i < data.totalCopies; i++) {
+                    copyPromises.push(createCopy({
+                        editionId,
+                        owningLibrary: data.libraryId,
+                        condition: data.condition
+                    }).unwrap());
+                }
+                await Promise.all(copyPromises);
+
+                success(`Successfully created Work, Edition, and ${data.totalCopies} copies!`);
                 navigate('/books');
             } catch (err) {
-                showError((err as ApiError).data?.message || 'Failed to create book');
+                showError((err as ApiError).data?.message || 'An error occurred during creation.');
+            } finally {
+                setIsSubmitting(false);
             }
         },
-        [createBook, navigate, success, showError, selectedFile]
+        [createWork, createEdition, createCopy, navigate, success, showError, selectedFile]
     );
 
-    const inputClasses = "mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition sm:text-sm";
+    const inputClasses = (hasError: boolean) =>
+        `mt-1 block w-full px-4 py-2 border ${hasError ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition sm:text-sm`;
+
+    const ErrorMsg = ({ msg }: { msg?: string }) =>
+        msg ? <p className="mt-1.5 text-xs text-red-600 font-medium animate-in fade-in slide-in-from-top-1">{msg}</p> : null;
 
     return (
         <div className="min-h-screen bg-gray-50 py-10">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Add New Book</h1>
-                    <p className="text-gray-600">Fill in the details to expand your library's catalog.</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Add New Book to Collection</h1>
+                    <p className="text-gray-600">This form creates the Work, its first Edition, and the initial physical Copies.</p>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 lg:grid lg:grid-cols-3 lg:gap-8 lg:space-y-0">
 
                     <div className="lg:col-span-1">
                         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-center">
@@ -112,53 +167,95 @@ const AddBookPage = () => {
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                             </div>
-                            <p className="mt-3 text-xs text-gray-500 italic">Click to upload JPG or PNG (Max 5MB)</p>
+                            <p className="mt-3 text-xs text-gray-500 italic">Click to upload JPG or PNG</p>
                         </div>
                     </div>
 
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+                        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                            <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">Step 1: Parent Work Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700">Book Title</label>
-                                    <input {...register('title')} type="text" className={inputClasses} placeholder="e.g. The Great Gatsby" />
-                                    {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message as string}</p>}
+                                    <label className="block text-sm font-medium text-gray-700">Book Title *</label>
+                                    <input {...register('title', { required: 'Title is required' })} className={inputClasses(!!errors.title)} placeholder="e.g. 1984" />
+                                    <ErrorMsg msg={errors.title?.message} />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Author</label>
-                                    <input {...register('author')} type="text" className={inputClasses} placeholder="F. Scott Fitzgerald" />
-                                    {errors.author && <p className="mt-1 text-xs text-red-600">{errors.author.message as string}</p>}
+                                    <label className="block text-sm font-medium text-gray-700">Author *</label>
+                                    <input {...register('originalAuthor', { required: 'Author is required' })} className={inputClasses(!!errors.originalAuthor)} placeholder="George Orwell" />
+                                    <ErrorMsg msg={errors.originalAuthor?.message} />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">ISBN</label>
-                                    <input {...register('isbn')} type="text" className={inputClasses} placeholder="978-3-16-148410-0" />
-                                    {errors.isbn && <p className="mt-1 text-xs text-red-600">{errors.isbn.message as string}</p>}
+                                    <label className="block text-sm font-medium text-gray-700">Genres</label>
+                                    <input {...register('genres')} className={inputClasses(!!errors.genres)} placeholder="Dystopian, Sci-Fi (comma separated)" />
                                 </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea {...register('description')} className={inputClasses(!!errors.description)} rows={3} placeholder="Brief summary of the work..." />
+                                </div>
+                            </div>
+                        </div>
 
+                        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                            <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">Step 2: Edition Information</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Genre</label>
-                                    <input {...register('genre')} type="text" className={inputClasses} placeholder="Classic Literature" />
-                                    {errors.genre && <p className="mt-1 text-xs text-red-600">{errors.genre.message as string}</p>}
+                                    <label className="block text-sm font-medium text-gray-700">ISBN *</label>
+                                    <input {...register('isbn', { required: 'ISBN is required' })} className={inputClasses(!!errors.isbn)} placeholder="978-0451524935" />
+                                    <ErrorMsg msg={errors.isbn?.message} />
                                 </div>
-
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Format</label>
+                                    <select {...register('format')} className={inputClasses(!!errors.format)}>
+                                        <option value="HARDCOVER">Hardcover</option>
+                                        <option value="PAPERBACK">Paperback</option>
+                                        <option value="AUDIOBOOK">Audiobook</option>
+                                        <option value="EBOOK">EBook</option>
+                                    </select>
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Publisher</label>
-                                    <input {...register('publisher')} type="text" className={inputClasses} placeholder="Scribner's" />
-                                    {errors.publisher && <p className="mt-1 text-xs text-red-600">{errors.publisher.message as string}</p>}
+                                    <input {...register('publisher')} className={inputClasses(!!errors.publisher)} placeholder="Signet Classic" />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Total Copies</label>
-                                    <input {...register('totalCopies', { valueAsNumber: true })} type="number" className={inputClasses} />
-                                    {errors.totalCopies && <p className="mt-1 text-xs text-red-600">{errors.totalCopies.message as string}</p>}
+                                    <label className="block text-sm font-medium text-gray-700">Publication Year</label>
+                                    <input type="number" {...register('publicationYear', { valueAsNumber: true, min: { value: 1000, message: 'Invalid year' }, max: { value: new Date().getFullYear() + 1, message: 'Invalid year' } })} className={inputClasses(!!errors.publicationYear)} />
+                                    <ErrorMsg msg={errors.publicationYear?.message} />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Condition</label>
-                                    <select {...register('condition')} className={inputClasses}>
+                                    <label className="block text-sm font-medium text-gray-700">Language</label>
+                                    <input {...register('language')} className={inputClasses(!!errors.language)} placeholder="English" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Replacement Cost ($)</label>
+                                    <input type="number" step="0.01" {...register('replacementCost', { valueAsNumber: true, min: { value: 0, message: 'Cannot be negative' } })} className={inputClasses(!!errors.replacementCost)} />
+                                    <ErrorMsg msg={errors.replacementCost?.message} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                            <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">Step 3: Physical Copies</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Number of Copies</label>
+                                    <input type="number" min="1" {...register('totalCopies', { valueAsNumber: true, min: { value: 1, message: 'Must add at least 1 copy' } })} className={inputClasses(!!errors.totalCopies)} />
+                                    <ErrorMsg msg={errors.totalCopies?.message} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Assign to Library *</label>
+                                    <select {...register('libraryId', { required: 'Please select a library' })} className={inputClasses(!!errors.libraryId)}>
+                                        <option value="">-- Select Library --</option>
+                                        {libraries?.map(lib => (
+                                            <option key={lib._id} value={lib._id}>{lib.name}</option>
+                                        ))}
+                                    </select>
+                                    <ErrorMsg msg={errors.libraryId?.message} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Initial Condition</label>
+                                    <select {...register('condition')} className={inputClasses(!!errors.condition)}>
                                         <option value="NEW">New</option>
                                         <option value="GOOD">Good</option>
                                         <option value="FAIR">Fair</option>
@@ -166,29 +263,23 @@ const AddBookPage = () => {
                                     </select>
                                 </div>
                             </div>
+                        </div>
 
-                            {error && (
-                                <div className="mt-6 p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
-                                    {((error as ApiError).data?.message) || 'Error creating book'}
-                                </div>
-                            )}
-
-                            <div className="mt-8 flex items-center justify-end space-x-4 border-t pt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/books')}
-                                    className="px-6 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-md transition-all active:scale-95 disabled:opacity-50"
-                                >
-                                    {isLoading ? 'Processing...' : 'Save Book'}
-                                </button>
-                            </div>
+                        <div className="flex items-center justify-end space-x-4">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/books')}
+                                className="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="px-8 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'Creating...' : 'Save Catalog Entry'}
+                            </button>
                         </div>
                     </div>
                 </form>

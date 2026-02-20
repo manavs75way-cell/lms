@@ -6,7 +6,9 @@ export const registerSchema = z.object({
         email: z.string().email('Invalid email address'),
         password: z.string().min(6, 'Password must be at least 6 characters'),
         role: z.enum(['LIBRARIAN', 'MEMBER', 'ADMIN']).optional(),
-        membershipTier: z.enum(['STUDENT', 'ADULT', 'PREMIUM']).default('STUDENT'),
+        membershipType: z.enum(['STANDARD', 'PREMIUM', 'ADULT', 'STUDENT']).default('STANDARD'),
+        homeLibrary: z.string().optional(),
+        parentAccount: z.string().optional(),
     }),
 });
 

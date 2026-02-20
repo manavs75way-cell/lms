@@ -8,8 +8,12 @@ export interface User {
     name: string;
     email: string;
     role: 'LIBRARIAN' | 'MEMBER' | 'ADMIN';
-    membershipTier: 'STUDENT' | 'ADULT' | 'PREMIUM';
-    barcodeUrl?: string; 
+    membershipType: 'STANDARD' | 'PREMIUM' | 'ADULT' | 'STUDENT';
+    homeLibrary?: { _id: string; name: string; code: string } | string;
+    parentAccount?: string;
+    globalBorrowLimit: number;
+    barcodeUrl?: string;
+    qrCodeUrl?: string;
 }
 
 export interface AuthResponse {
@@ -29,7 +33,9 @@ export const registerSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     role: z.enum(['LIBRARIAN', 'MEMBER', 'ADMIN']).default('MEMBER'),
-    membershipTier: z.enum(['STUDENT', 'ADULT', 'PREMIUM']).default('STUDENT'),
+    membershipType: z.enum(['STANDARD', 'PREMIUM', 'ADULT', 'STUDENT']).default('STANDARD'),
+    homeLibrary: z.string().optional(),
+    parentAccount: z.string().optional(),
 });
 
 export type LoginRequest = z.infer<typeof loginSchema>;
@@ -61,7 +67,12 @@ export const authApi = api.injectEndpoints({
             query: () => 'auth/me',
             providesTags: ['Users'],
         }),
+        getChildAccounts: builder.query<User[], void>({
+            query: () => 'auth/children',
+            transformResponse: (response: { data: User[] }) => response.data,
+            providesTags: ['Users'],
+        }),
     }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useLogoutMutation, useGetMeQuery } = authApi;
+export const { useLoginMutation, useRegisterMutation, useLogoutMutation, useGetMeQuery, useGetChildAccountsQuery } = authApi;

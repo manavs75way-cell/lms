@@ -25,19 +25,19 @@ const ProfilePage = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
-                
+
                 <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Account Overview</h1>
                         <p className="text-gray-600">Manage your library membership and personal details.</p>
                     </div>
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                        {user.membershipTier} Member
+                        {user.membershipType} Member
                     </span>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    
+
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-6">
@@ -81,24 +81,39 @@ const ProfilePage = () => {
                                 </div>
                                 <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
                                 <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">Digital Member Card</p>
-                                
-                                <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                                    {user.barcodeUrl ? (
-                                        <>
-                                            <img
-                                                src={`http://localhost:5000${user.barcodeUrl}`}
-                                                alt="Membership Barcode"
-                                                className="mx-auto mix-blend-multiply h-20 w-auto"
-                                            />
-                                            <p className="text-[10px] text-gray-400 mt-2">MEMBER_ID: {user._id?.substring(0,8).toUpperCase()}</p>
-                                        </>
-                                    ) : (
-                                        <div className="h-20 flex items-center justify-center text-gray-400 italic text-sm">
-                                            Barcode not available
-                                        </div>
-                                    )}
+
+                                <div className="mt-8 grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center">
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">1D Barcode</p>
+                                        {user.barcodeUrl ? (
+                                            <>
+                                                <img
+                                                    src={`http://localhost:5000${user.barcodeUrl}`}
+                                                    alt="Membership Barcode"
+                                                    className="w-full mix-blend-multiply max-h-16 object-contain"
+                                                />
+                                            </>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs italic">N/A</span>
+                                        )}
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center">
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">QR Code</p>
+                                        {user.qrCodeUrl ? (
+                                            <>
+                                                <img
+                                                    src={`http://localhost:5000${user.qrCodeUrl}`}
+                                                    alt="Membership QR Code"
+                                                    className="w-full mix-blend-multiply max-h-16 object-contain"
+                                                />
+                                            </>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs italic">N/A</span>
+                                        )}
+                                    </div>
                                 </div>
-                                
+                                <p className="text-[10px] text-gray-400 mt-3 font-mono">MEMBER_ID: {user._id?.toUpperCase()}</p>
+
                                 <div className="mt-6 pt-6 border-t border-gray-100">
                                     <p className="text-xs text-gray-500 leading-relaxed">
                                         Present this barcode at any library kiosk to check out physical books or access archives.

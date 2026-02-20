@@ -1,60 +1,187 @@
 import { api } from './api';
-import { z } from 'zod';
+import { Library } from './libraryApi';
 
-export interface Book {
+export interface Work {
     _id: string;
     title: string;
-    author: string;
-    isbn: string;
-    barcodeUrl?: string;
+    originalAuthor: string;
+    genres: string[];
+    description?: string;
     coverImageUrl?: string;
-    genre: string;
-    publisher: string;
-    condition: 'NEW' | 'GOOD' | 'FAIR' | 'DAMAGED';
-    totalCopies: number;
-    availableCopies: number;
     createdAt: string;
 }
 
-export const createBookSchema = z.object({
-    title: z.string().min(1, 'Title is required'),
-    author: z.string().min(1, 'Author is required'),
-    isbn: z.string().min(10, 'ISBN must be at least 10 characters').max(13, 'ISBN cannot exceed 13 characters'),
-    coverImageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-    genre: z.string().min(1, 'Genre is required'),
-    publisher: z.string().min(1, 'Publisher is required'),
-    condition: z.enum(['NEW', 'GOOD', 'FAIR', 'DAMAGED']).default('GOOD'),
-    totalCopies: z.coerce.number().int().min(1, 'Total copies must be at least 1'),
-});
+export interface Edition {
+    _id: string;
+    work: string | Work;
+    isbn: string;
+    format: 'HARDCOVER' | 'PAPERBACK' | 'AUDIOBOOK' | 'EBOOK';
+    publisher: string;
+    publicationYear: number;
+    language: string;
+    replacementCost: number;
+    coverImageUrl?: string;
+    createdAt: string;
+}
 
-export type CreateBookRequest = z.infer<typeof createBookSchema>;
+export interface Copy {
+    _id: string;
+    edition: string | Edition;
+    copyCode: string;
+    owningLibrary: string | Library;
+    currentLibrary: string | Library;
+    condition: 'NEW' | 'GOOD' | 'FAIR' | 'DAMAGED';
+    status: 'AVAILABLE' | 'BORROWED' | 'IN_TRANSIT' | 'DAMAGED_PULLED' | 'LOST';
+    barcodeUrl?: string;
+    qrCodeUrl?: string;
+    acquiredDate: string;
+    createdAt: string;
+}
+
+export interface SearchEditionAvailability {
+    edition: Edition;
+    totalCopies: number;
+    availableCopies: number;
+}
+
+export interface SearchCatalogResult {
+    work: Work;
+    editions: SearchEditionAvailability[];
+}
+
+export interface CsvRow {
+    title: string;
+    originalAuthor: string;
+    genres: string;
+    isbn: string;
+    format: string;
+    publisher: string;
+    publicationYear: string;
+    language: string;
+    replacementCost: string;
+    copyCode: string;
+    libraryId: string;
+    condition: string;
+    [key: string]: string;
+}
+
+export interface NearDuplicate {
+    csvRow: CsvRow;
+    existingMatch: {
+        _id: string;
+        title: string;
+        originalAuthor: string;
+    };
+    similarityScore: number;
+}
 
 export const booksApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getBooks: builder.query<Book[], string | void>({
-            query: (search) => ({
-                url: 'books',
-                params: search ? { search } : undefined,
+        searchCatalog: builder.query<SearchCatalogResult[], string | void>({
+            query: (query) => ({
+                url: 'books/search',
+                params: query ? { q: query } : undefined,
             }),
-            transformResponse: (response: { data: Book[] }) => response.data,
+            transformResponse: (response: { data: SearchCatalogResult[] }) => response.data,
             providesTags: ['Books'],
         }),
-        createBook: builder.mutation<Book, FormData>({
+
+        getWorks: builder.query<Work[], string | void>({
+            query: (search) => ({
+                url: 'books/works',
+                params: search ? { search } : undefined,
+            }),
+            transformResponse: (response: { data: Work[] }) => response.data,
+            providesTags: ['Books'],
+        }),
+        getWork: builder.query<Work, string>({
+            query: (id) => `books/works/${id}`,
+            transformResponse: (response: { data: Work }) => response.data,
+            providesTags: (_result, _error, id) => [{ type: 'Books', id }],
+        }),
+        createWork: builder.mutation<{ success: boolean; data: Work; _id?: string }, FormData>({
             query: (formData) => ({
-                url: 'books',
+                url: 'books/works',
                 method: 'POST',
                 body: formData,
             }),
             invalidatesTags: ['Books'],
         }),
-        deleteBook: builder.mutation<void, string>({
+        updateWork: builder.mutation<Work, { id: string; data: Partial<Work> }>({
+            query: ({ id, data }) => ({
+                url: `books/works/${id}`,
+                method: 'PUT',
+                body: data,
+            }),
+            invalidatesTags: ['Books'],
+        }),
+        deleteWork: builder.mutation<void, string>({
             query: (id) => ({
-                url: `books/${id}`,
+                url: `books/works/${id}`,
                 method: 'DELETE',
             }),
             invalidatesTags: ['Books'],
         }),
-        importBooks: builder.mutation<{ success: boolean; message: string }, File>({
+
+        getEditions: builder.query<Edition[], string>({
+            query: (workId) => `books/works/${workId}/editions`,
+            transformResponse: (response: { data: Edition[] }) => response.data,
+            providesTags: ['Books'],
+        }),
+        createEdition: builder.mutation<{ success: boolean; data: Edition; _id?: string }, { workId: string; data: FormData }>({
+            query: ({ workId, data }) => ({
+                url: `books/works/${workId}/editions`,
+                method: 'POST',
+                body: data,
+            }),
+            invalidatesTags: ['Books'],
+        }),
+        updateEdition: builder.mutation<Edition, { id: string; data: Partial<Edition> }>({
+            query: ({ id, data }) => ({
+                url: `books/editions/${id}`,
+                method: 'PUT',
+                body: data,
+            }),
+            invalidatesTags: ['Books'],
+        }),
+        deleteEdition: builder.mutation<void, string>({
+            query: (id) => ({
+                url: `books/editions/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Books'],
+        }),
+
+        getCopies: builder.query<Copy[], string>({
+            query: (editionId) => `books/editions/${editionId}/copies`,
+            transformResponse: (response: { data: Copy[] }) => response.data,
+            providesTags: ['Books'],
+        }),
+        createCopy: builder.mutation<{ success: boolean; data: Copy; _id?: string }, { editionId: string; owningLibrary: string; condition: string }>({
+            query: ({ editionId, ...data }) => ({
+                url: `books/editions/${editionId}/copies`,
+                method: 'POST',
+                body: data,
+            }),
+            invalidatesTags: ['Books'],
+        }),
+        updateCopy: builder.mutation<Copy, { id: string; data: Partial<Copy> }>({
+            query: ({ id, data }) => ({
+                url: `books/copies/${id}`,
+                method: 'PUT',
+                body: data,
+            }),
+            invalidatesTags: ['Books'],
+        }),
+        deleteCopy: builder.mutation<void, string>({
+            query: (id) => ({
+                url: `books/copies/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Books'],
+        }),
+
+        importBooks: builder.mutation<{ success: boolean; data: { nearDuplicates: NearDuplicate[]; newBooks: Work[] } }, File>({
             query: (file) => {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -66,15 +193,10 @@ export const booksApi = api.injectEndpoints({
             },
             invalidatesTags: ['Books'],
         }),
-        getBook: builder.query<Book, string>({
-            query: (id) => `books/${id}`,
-            transformResponse: (response: { data: Book }) => response.data,
-            providesTags: (_result, _error, id) => [{ type: 'Books', id }],
-        }),
-        updateBook: builder.mutation<Book, { id: string; data: FormData }>({
-            query: ({ id, data }) => ({
-                url: `books/${id}`,
-                method: 'PUT',
+        resolveImportDuplicate: builder.mutation<void, { csvRow: CsvRow; resolution: string; matchId?: string }>({
+            query: (data) => ({
+                url: 'books/import/resolve',
+                method: 'POST',
                 body: data,
             }),
             invalidatesTags: ['Books'],
@@ -82,4 +204,21 @@ export const booksApi = api.injectEndpoints({
     }),
 });
 
-export const { useGetBooksQuery, useCreateBookMutation, useDeleteBookMutation, useImportBooksMutation, useGetBookQuery, useUpdateBookMutation } = booksApi;
+export const {
+    useSearchCatalogQuery,
+    useGetWorksQuery,
+    useGetWorkQuery,
+    useCreateWorkMutation,
+    useUpdateWorkMutation,
+    useDeleteWorkMutation,
+    useGetEditionsQuery,
+    useCreateEditionMutation,
+    useUpdateEditionMutation,
+    useDeleteEditionMutation,
+    useGetCopiesQuery,
+    useCreateCopyMutation,
+    useUpdateCopyMutation,
+    useDeleteCopyMutation,
+    useImportBooksMutation,
+    useResolveImportDuplicateMutation
+} = booksApi;

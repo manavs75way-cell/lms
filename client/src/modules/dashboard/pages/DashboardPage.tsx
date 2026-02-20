@@ -7,10 +7,8 @@ import { RootState } from '../../../app/store';
 import LibrarianDashboardPage from './LibrarianDashboardPage';
 import {
     BookOpenIcon,
-    ClockIcon,
     BellIcon,
     BookmarkIcon,
-    UserGroupIcon,
     ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
@@ -91,6 +89,8 @@ const DashboardPage = React.memo(() => {
                         value={stats?.reservedCount}
                         icon={BookmarkIcon}
                         color="bg-purple-500"
+                        link="/reservations"
+                        linkText="View Queue"
                     />
                     <StatCard
                         title="New Notifications"
@@ -103,7 +103,6 @@ const DashboardPage = React.memo(() => {
                 </div>
 
                 <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Recommendations Section (Taking up more space) */}
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2">
                             <Recommendations />

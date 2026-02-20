@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { useGetRecommendationsQuery } from '../../../services/borrowApi';
-import {  ChevronRightIcon } from '@heroicons/react/24/solid';
+import { ChevronRightIcon, SparklesIcon } from '@heroicons/react/24/solid';
 import { Link } from 'react-router-dom';
 
 const Recommendations = React.memo(() => {
     const { data: recommendations, isLoading } = useGetRecommendationsQuery();
 
-    const recommendedBooks = useMemo(() => {
+    const recommendedItems = useMemo(() => {
         return recommendations || [];
     }, [recommendations]);
 
@@ -23,59 +23,66 @@ const Recommendations = React.memo(() => {
         );
     }
 
-    if (!recommendedBooks || recommendedBooks.length === 0) return null;
+    if (!recommendedItems || recommendedItems.length === 0) return null;
 
     return (
         <div className="py-6 px-6">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Recommended for You</h2>
+                    <SparklesIcon className="h-6 w-6 text-purple-600" />
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Curated for You</h2>
                 </div>
-                <Link to="/books" className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 flex items-center">
+                <Link to="/books" className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 flex items-center bg-indigo-50 px-3 py-1.5 rounded-full transition-colors">
                     Browse all <ChevronRightIcon className="h-4 w-4 ml-1" />
                 </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                {recommendedBooks.map((book) => (
-                    <Link 
-                        key={book._id} 
-                        to={`/books/${book._id}`} 
-                        className="group block"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {recommendedItems.map((item, index) => (
+                    <Link
+                        key={item.edition._id + index}
+                        to={`/books/works/${item.edition.work._id}`}
+                        className="group flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
                     >
-                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1">
-                            {book.coverImageUrl ? (
-                                <img
-                                    src={book.coverImageUrl}
-                                    alt={book.title}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
-                                    <span className="text-2xl mb-2">📖</span>
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">No Cover</span>
-                                </div>
-                            )}
-                            
-                            
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                                <span className="text-white text-xs font-bold py-1 px-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30">
-                                    View Details
-                                </span>
+                        <div className="flex p-4 gap-4 flex-col">
+                            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                                {item.edition.coverImageUrl ? (
+                                    <img
+                                        src={item.edition.coverImageUrl.startsWith('http') ? item.edition.coverImageUrl : `http://localhost:5000${item.edition.coverImageUrl}`}
+                                        alt={item.edition.work.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-2 text-center bg-gray-50">
+                                        <span className="text-3xl mb-2">📖</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest text-gray-500">No Cover</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex-1 min-w-0 py-1">
+                                <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                                    {item.edition.work.title}
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-1">by {item.edition.work.originalAuthor}</p>
+
+                                {item.edition.work.genres && item.edition.work.genres.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                        <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider border border-indigo-100">
+                                            {item.edition.work.genres[0]}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        <div className="mt-3 px-1">
-                            <h3 className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">
-                                {book.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-0.5 truncate">{book.author}</p>
-                            
-                            {book.genre && (
-                                <span className="inline-block mt-2 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter">
-                                    {book.genre}
-                                </span>
-                            )}
+                        <div className="mt-auto bg-gradient-to-br from-indigo-50/80 to-purple-50/80 px-4 py-3 border-t border-indigo-100/30">
+                            <div className="flex items-start gap-2">
+                                <span className="text-sm mt-0.5">💡</span>
+                                <p className="text-xs font-semibold text-indigo-900 leading-relaxed">
+                                    {item.explanation}
+                                </p>
+                            </div>
                         </div>
                     </Link>
                 ))}

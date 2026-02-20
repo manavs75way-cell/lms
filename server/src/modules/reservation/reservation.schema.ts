@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 export const createReservationSchema = z.object({
     body: z.object({
-        bookId: z.string().min(1, 'Book ID is required'),
+        editionId: z.string().min(1, 'Edition ID is required'),
+        preferredLibraryId: z.string().optional(),
     }),
 });
 

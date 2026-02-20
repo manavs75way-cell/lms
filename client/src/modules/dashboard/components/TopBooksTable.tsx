@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { TopBook } from '../../../types/dashboard.types';
 
 const TableCard: React.FC<{ title: string; children: React.ReactNode; color?: string }> = ({ title, children, color = "indigo" }) => (
@@ -15,7 +15,7 @@ const TopBooksTable: React.FC<{ data: TopBook[] }> = ({ data }) => (
     <TableCard title="Trending Titles">
         <div className="p-4 space-y-4">
             {data.slice(0, 5).map((book, idx) => (
-                <div key={book.bookId} className="flex items-center justify-between">
+                <div key={book.bookId ?? idx} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <span className="text-lg font-black text-gray-200">0{idx + 1}</span>
                         <div>

@@ -74,25 +74,22 @@ client/
 
 ## Features
 
-- User authentication and authorization
-- Book browsing and search
-- Book reservation and borrowing
-- Reading history tracking
-- User profile management
-- Responsive design with Tailwind CSS
-- Type-safe forms with React Hook Form and Zod
-- Centralized state management with Redux Toolkit
+- **Auth & Profiles**: Secure registration, login, and profile management with QR personal identifiers.
+- **Catalog Exploration**: Advanced search and browsing across multi-library collections.
+- **Borrowing & Reservations**: Real-time status tracking for active rentals and priority-based reservation queue.
+- **Explainable Recommendations**: AI-driven suggestions with "Explainable AI" badges showing the rationale.
+- **Reading History**: Detailed tracking of past reads and current progress.
+- **Consortium Support**: Seamless experience across a network of libraries.
+- **Type-Safe Forms**: End-to-end type safety using React Hook Form and Zod.
 
 ## Development Guidelines
 
-- Follow TypeScript best practices
-- Avoid using `any` type
-- Use React Hook Form for all forms
-- Implement proper error boundaries
-- Follow component composition patterns
-- Use proper naming conventions
-- Organize imports correctly
-- Implement loading states for async operations
+- **Strict Type Safety**: A zero `any` policy is enforced. All components, hooks, and services must be fully typed.
+- **Form Patterns**: Use `React Hook Form` combined with `Zod` schemas for validation.
+- **Component Design**: Follow a modular, atomic approach with clear separation of concerns.
+- **Modern Styling**: Use Tailwind CSS consistently; avoid inline styles.
+- **Error Handling**: Use the built-in `ErrorBoundary` components for graceful failure recovery.
+- **Clean Code**: Ensure imports are organized and code is self-documenting.
 
 ## Build Output
 

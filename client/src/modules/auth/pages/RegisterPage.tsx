@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRegisterMutation, registerSchema, RegisterRequest } from '../../../services/authApi';
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { ApiError } from '../../../services/api';
 
 export const RegisterPage = () => {
@@ -15,6 +15,7 @@ export const RegisterPage = () => {
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(registerSchema),
@@ -23,16 +24,22 @@ export const RegisterPage = () => {
             email: '',
             password: '',
             role: 'MEMBER',
-            membershipTier: 'STUDENT',
+            membershipType: 'STUDENT',
+            parentAccount: '',
         },
     });
 
     const selectedRole = watch('role');
+    const [showParentField, setShowParentField] = React.useState(false);
 
     const onSubmit = useCallback(
         async (data: RegisterRequest) => {
             try {
-                await registerUser(data).unwrap();
+                const payload = {
+                    ...data,
+                    parentAccount: data.parentAccount?.trim() || undefined,
+                };
+                await registerUser(payload).unwrap();
                 navigate('/');
             } catch (err) {
                 console.error('Registration failed:', err);
@@ -43,11 +50,11 @@ export const RegisterPage = () => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen w-full overflow-hidden bg-white">
-            
+
             <div className="hidden lg:block relative">
-                <img 
-                    src="/register.jpeg" 
-                    alt="Library Books" 
+                <img
+                    src="/register.jpeg"
+                    alt="Library Books"
                     className="absolute inset-0 h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-indigo-900/40 mix-blend-multiply" />
@@ -114,21 +121,20 @@ export const RegisterPage = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">I am a...</label>
-                                    <select 
-                                        {...register('role')} 
+                                    <select
+                                        {...register('role')}
                                         className="block w-full px-3 py-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                                     >
                                         <option value="MEMBER">Member</option>
                                         <option value="LIBRARIAN">Librarian</option>
-                                        <option value="ADMIN">Admin</option>
                                     </select>
                                 </div>
 
                                 {selectedRole === 'MEMBER' && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
-                                        <select 
-                                            {...register('membershipTier')} 
+                                        <select
+                                            {...register('membershipType')}
                                             className="block w-full px-3 py-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                                         >
                                             <option value="STUDENT">Student</option>
@@ -138,6 +144,37 @@ export const RegisterPage = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {selectedRole === 'MEMBER' && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700">Delegated Account</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowParentField(v => {
+                                                    if (v) setValue('parentAccount', ''); 
+                                                    return !v;
+                                                });
+                                            }}
+                                            className="text-xs text-indigo-500 underline"
+                                        >
+                                            {showParentField ? 'Hide' : '+ Link to parent account'}
+                                        </button>
+                                    </div>
+                                    {showParentField && (
+                                        <>
+                                            <input
+                                                {...register('parentAccount')}
+                                                type="text"
+                                                className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm font-mono"
+                                                placeholder="Parent user ID (MongoDB ObjectId)"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Borrows will count against the parent's limit.</p>
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {error && (

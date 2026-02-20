@@ -109,16 +109,13 @@ The server follows a modular architecture with:
 
 ## Features
 
-- RESTful API design
-- JWT-based authentication with secure password hashing
-- Role-based access control
-- File upload with Cloudinary integration
-- Rate limiting for API protection
-- Request validation with Zod schemas
-- Error handling middleware
-- CSV import functionality
-- Barcode generation for books
-- Automated notification system
+- **100% Type Safety**: Zero `any` types. Full end-to-end type safety across all services, controllers, and models.
+- **Advanced Mongoose Typing**: Robust population interfaces (`PopulatedEdition`, `IBorrowWithCopy`) for type-safe document handling after `.populate()`.
+- **Explainable Recommendation AI**: Hybrid engine (Content + Collaborative) providing explainable results tailored to user history.
+- **Smart Catalog Import**: Fuzzy-deduplicated CSV import system with human-in-the-loop resolution for near-duplicates.
+- **Dynamic Resource Analytics**: Real-time predictive hold forecasting using weighted moving averages.
+- **Automated Workflows**: Daily notification checks and automated floating collection rebalancing.
+- **Secure Infrastructure**: JWT auth with secure hashing, role-based controls, and rate-limiting.
 
 ## Security Features
 
@@ -140,13 +137,12 @@ The application uses MongoDB with Mongoose ODM. Key collections include:
 
 ## Development Guidelines
 
-- Follow service-controller pattern
-- Implement proper error handling
-- Use Zod for validation in middleware
-- Avoid code duplication
-- Follow TypeScript best practices
-- Implement proper indexing in MongoDB schemas
-- Use environment variables for sensitive data
+- **Zero `any` Policy**: The backend is 100% type-safe. No `any` types or unsafe casts are permitted.
+- **Typed Populations**: Always use custom interfaces when working with populated Mongoose documents to ensure type safety.
+- **Service-Controller Pattern**: Business logic resides exclusively in Services; Controllers handle entry/exit points.
+- **Schema First Validation**: All data entry points must be validated against a Zod schema.
+- **Clean Service Design**: Maintain granular, focused service functions to facilitate testing and readability.
+- **Performance Focused**: Use targeted MongoDB indexing and avoid excessive data hydration where lean results suffice.
 
 ## Deployment
 

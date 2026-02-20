@@ -58,7 +58,6 @@ export const authorize = (...roles: string[]) => {
             return next(new AppError('Not authenticated', 401));
         }
 
-        // console.log('Checking permission. User Role:', req.user.role, 'Required Roles:', roles);
         if (!roles.includes(req.user.role)) {
             console.error(`Access Denied. User Role: ${req.user.role}, Required: ${roles.join(', ')}`);
             return next(new AppError('You do not have permission to perform this action', 403));

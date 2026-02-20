@@ -46,12 +46,33 @@ export interface ActiveMember {
     totalFine: number;
 }
 
+export interface PredictiveHold {
+    editionId: string;
+    title: string;
+    isbn: string;
+    currentReservations: number;
+    predictedReservations: number;
+    confidence: number;
+    trend: 'RISING' | 'STABLE' | 'DECLINING';
+    isOverridden?: boolean;
+    overrideReason?: string;
+    edition?: {
+        _id: string;
+        isbn: string;
+        format: string;
+        work: {
+            title: string;
+        };
+    };
+}
+
 export interface LibrarianDashboardData {
     summary: DashboardSummary;
     recentBorrows: RecentBorrow[];
     overdueList: OverdueBorrow[];
     topBooks: TopBook[];
     activeMembers: ActiveMember[];
+    predictiveHolds: PredictiveHold[];
 }
 
 export interface DashboardResponse {

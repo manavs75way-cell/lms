@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGetUnreadCountQuery } from '../services/notificationApi';
-import { BellIcon, BookOpenIcon, UserCircleIcon, ArrowLeftOnRectangleIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { BellIcon, BookOpenIcon, UserCircleIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useToast } from '../context/ToastContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../modules/auth/authSlice';
@@ -55,6 +55,16 @@ export const MainLayout: React.FC = () => {
                                         </Link>
                                         <Link to="/history" className={navLinkClasses('/history')}>
                                             History
+                                        </Link>
+                                    </>
+                                )}
+                                {(user?.role === 'LIBRARIAN' || user?.role === 'ADMIN') && (
+                                    <>
+                                        <Link to="/admin/shipments" className={navLinkClasses('/admin/shipments')}>
+                                            Shipments
+                                        </Link>
+                                        <Link to="/admin/damage-reports" className={navLinkClasses('/admin/damage-reports')}>
+                                            Damage Reports
                                         </Link>
                                     </>
                                 )}
@@ -123,7 +133,7 @@ export const MainLayout: React.FC = () => {
 
 const NotificationBell = () => {
     const { data } = useGetUnreadCountQuery(undefined, {
-        pollingInterval: 5000, // Check every 5 seconds
+        pollingInterval: 60000, 
     });
     const { success } = useToast();
     const [prevCount, setPrevCount] = React.useState(0);

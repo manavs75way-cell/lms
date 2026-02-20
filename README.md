@@ -148,27 +148,22 @@ assement-5/
 - Generate reports
 
 ### Technical Features
-- Type-safe codebase with TypeScript
-- Form validation with React Hook Form and Zod
-- Secure authentication with JWT
-- File upload with Cloudinary integration
-- Rate limiting for API protection
-- Responsive design with Tailwind CSS
-- Error boundaries and proper error handling
+- **100% Type Safety**: Complete removal of all `any` types across both client and server codebases.
+- **Strict Validation**: Comprehensive schema validation using Zod for both API requests and frontend forms.
+- **Secure Authentication**: JWT-based auth with secure password hashing and role-based access control.
+- **Explainable AI**: Recommendation engine with clear rationale for each suggestion.
+- **Automated Workflows**: Notification triggers and background rebalancing for floating collections.
+- **Robust Error Handling**: Centralized error middleware on server and Error Boundaries on client.
+- **Responsive UI**: Premium aesthetics using Tailwind CSS for a modern, dynamic experience.
 
 ## Development Guidelines
 
-This project follows best practices outlined in `requiremt.txt`, including:
-- Proper folder structure and code organization
-- Service-controller pattern separation
-- Type safety (avoiding `any` types)
-- Form handling with React Hook Form
-- Proper validation with Zod
-- Error boundaries and error handling
-- Protected routes implementation
-- Memoization where needed
-- No inline styling
-- Proper import organization
+This project strictly adheres to the following principles:
+- **Zero `any` Policy**: The codebase is 100% type-safe. No `any` types are permitted.
+- **Service-Controller Pattern**: Clean separation of business logic in services from HTTP handling in controllers.
+- **Centralized Validation**: All incoming data is validated using Zod at the route level.
+- **Premium Aesthetics**: UI must feel modern and premium; no inline styles are used.
+- **Clean Imports**: Organized and relative import structure.
 
 ## Available Scripts
 

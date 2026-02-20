@@ -1,22 +1,28 @@
 import { api } from './api';
 import { z } from 'zod';
+import { User } from './authApi';
+import { Edition, Work } from './booksApi';
+import { Library } from './libraryApi';
+
+export interface PopulatedEdition extends Omit<Edition, 'work'> {
+    work: Work;
+}
 
 export interface Reservation {
     _id: string;
-    user: string;
-    book: {
-        _id: string;
-        title: string;
-        author: string;
-        coverImageUrl?: string;
-    };
-    position: number;
+    user: string | User;
+    edition: PopulatedEdition;
+    preferredLibrary?: string | Library;
+    membershipTypeAtReservation: string;
+    effectivePriority: number;
+    priorityBoostedAt?: string;
     status: 'PENDING' | 'FULFILLED' | 'CANCELLED';
     createdAt: string;
 }
 
 export const createReservationSchema = z.object({
-    bookId: z.string().min(1, 'Book ID is required'),
+    editionId: z.string().min(1, 'Edition ID is required'),
+    preferredLibraryId: z.string().optional(),
 });
 
 export type CreateReservationRequest = z.infer<typeof createReservationSchema>;
@@ -43,6 +49,13 @@ export const reservationApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Reservations'],
         }),
+        recalculatePriorities: builder.mutation<{ updated: number; promoted: number }, void>({
+            query: () => ({
+                url: 'reservations/recalculate-priorities',
+                method: 'POST',
+            }),
+            invalidatesTags: ['Reservations'],
+        }),
     }),
 });
 
@@ -50,4 +63,5 @@ export const {
     useGetMyReservationsQuery,
     useCreateReservationMutation,
     useCancelReservationMutation,
+    useRecalculatePrioritiesMutation,
 } = reservationApi;

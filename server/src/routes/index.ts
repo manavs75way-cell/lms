@@ -6,6 +6,10 @@ import statsRoutes from '../modules/stats/stats.route';
 import reservationRoutes from '../modules/reservation/reservation.route';
 import notificationRoutes from '../modules/notification/notification.route';
 import configRoutes from '../modules/config/config.route';
+import libraryRoutes from '../modules/library/library.route';
+import shipmentRoutes from '../modules/shipment/shipment.route';
+import damageRoutes from '../modules/damage/damage.route';
+import fineRoutes from '../modules/fine/fine.route';
 
 const router = Router();
 
@@ -24,5 +28,9 @@ router.use('/stats', statsRoutes);
 router.use('/reservations', reservationRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/config', configRoutes);
+router.use('/libraries', libraryRoutes);
+router.use('/shipments', shipmentRoutes);
+router.use('/damage-reports', damageRoutes);
+router.use('/fine-policies', fineRoutes);
 
 export default router;

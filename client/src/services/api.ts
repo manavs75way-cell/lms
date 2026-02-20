@@ -37,7 +37,7 @@ const baseQueryWithReauth: BaseQueryFn<
                     name: string;
                     email: string;
                     role: string;
-                    membershipTier: string;
+                    membershipType: string;
                 };
                 accessToken: string;
                 refreshToken: string;
@@ -75,7 +75,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const api = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReauth,
-    tagTypes: ['Books', 'Users', 'Borrows', 'Auth', 'Borrowals', 'Reservations', 'Notifications', 'Config'],
+    tagTypes: ['Books', 'Users', 'Borrows', 'Auth', 'Reservations', 'Notifications', 'Config', 'Libraries', 'Shipments', 'DamageReports', 'FinePolicies'],
     endpoints: () => ({}),
 });
 

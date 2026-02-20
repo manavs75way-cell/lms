@@ -12,5 +12,6 @@ router.post('/refresh-token', validate(refreshTokenSchema), authController.refre
 
 router.post('/logout', authenticate, authController.logout);
 router.get('/me', authenticate, authController.me);
+router.get('/children', authenticate, authController.getChildAccounts);
 
 export default router;

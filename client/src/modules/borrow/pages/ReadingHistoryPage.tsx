@@ -26,7 +26,6 @@ const ReadingHistoryPage = () => {
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-10">
-            {/* Stats Header */}
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Reading Journey</h1>
@@ -61,10 +60,10 @@ const ReadingHistoryPage = () => {
                             )}
 
                             <div className="flex-shrink-0 w-16 h-22 md:w-20 md:h-28 bg-gray-100 rounded-lg overflow-hidden shadow-sm border border-gray-50">
-                                {record.book?.coverImageUrl ? (
+                                {record.copy.edition.work.coverImageUrl ? (
                                     <img
-                                        src={record.book.coverImageUrl}
-                                        alt={record.book.title}
+                                        src={`http://localhost:5000${record.copy.edition.work.coverImageUrl}`}
+                                        alt={record.copy.edition.work.title}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
                                 ) : (
@@ -75,10 +74,10 @@ const ReadingHistoryPage = () => {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
-                                    {record.book?.title}
+                                <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                                    {record.copy.edition.work.title}
                                 </h3>
-                                <p className="text-sm text-gray-500 font-medium">by {record.book?.author}</p>
+                                <p className="text-sm text-gray-500 font-medium">by {record.copy.edition.work.originalAuthor}</p>
 
                                 <div className="mt-3 flex flex-wrap gap-y-2 gap-x-4">
                                     <div className="flex items-center text-xs text-gray-400">

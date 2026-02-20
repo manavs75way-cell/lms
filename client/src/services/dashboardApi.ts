@@ -7,7 +7,15 @@ export const dashboardApi = api.injectEndpoints({
             query: () => '/stats/dashboard',
             providesTags: ['Borrows', 'Books', 'Users'],
         }),
+        overridePredictiveHold: builder.mutation<void, { editionId: string; reservations: number; reason: string }>({
+            query: (body) => ({
+                url: '/stats/predictive-override',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Borrows'], 
+        }),
     }),
 });
 
-export const { useGetLibrarianDashboardQuery } = dashboardApi;
+export const { useGetLibrarianDashboardQuery, useOverridePredictiveHoldMutation } = dashboardApi;

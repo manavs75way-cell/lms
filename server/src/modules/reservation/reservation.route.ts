@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../../common/middleware/auth.middleware';
+import { authenticate, authorize } from '../../common/middleware/auth.middleware';
 import { validate } from '../../common/middleware/validate.middleware';
 import * as reservationController from './reservation.controller';
 import { createReservationSchema, cancelReservationSchema } from './reservation.schema';
@@ -20,6 +20,13 @@ router.patch(
     authenticate,
     validate(cancelReservationSchema),
     reservationController.cancelReservation
+);
+
+router.post(
+    '/recalculate-priorities',
+    authenticate,
+    authorize('ADMIN', 'LIBRARIAN'),
+    reservationController.recalculatePriorities
 );
 
 export default router;

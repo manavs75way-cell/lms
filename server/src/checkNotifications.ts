@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 import { Borrow } from './modules/borrow/borrow.model';
+import { Copy } from './modules/book/copy.model';
+import { Edition } from './modules/book/edition.model';
+import { Work, IWork } from './modules/book/work.model';
 import { createNotification } from './modules/notification/notification.service';
-import { Book, IBook } from './modules/book/book.model';
 import { env } from './config/env';
 
 const checkDueNotifications = async () => {
@@ -13,18 +15,20 @@ const checkDueNotifications = async () => {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        
         const dueSoonBorrows = await Borrow.find({
             status: 'BORROWED',
             dueDate: {
                 $gte: now,
-                $lt: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000)
-            }
-        }).populate('book');
+                $lt: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000),
+            },
+        }).populate({
+            path: 'copy',
+            populate: { path: 'edition', populate: { path: 'work' } },
+        });
 
         for (const borrow of dueSoonBorrows) {
-
-            const bookTitle = (borrow.book as unknown as IBook).title;
+            const copy = borrow.copy as unknown as { edition: { work: IWork } };
+            const bookTitle = copy?.edition?.work?.title || 'Unknown Book';
             await createNotification(
                 borrow.user.toString(),
                 'Book Due Soon',
@@ -36,12 +40,15 @@ const checkDueNotifications = async () => {
 
         const overdueBorrows = await Borrow.find({
             status: 'BORROWED',
-            dueDate: { $lt: now }
-        }).populate('book');
+            dueDate: { $lt: now },
+        }).populate({
+            path: 'copy',
+            populate: { path: 'edition', populate: { path: 'work' } },
+        });
 
         for (const borrow of overdueBorrows) {
-            const bookTitle = (borrow.book as unknown as IBook).title;
-            
+            const copy = borrow.copy as unknown as { edition: { work: IWork } };
+            const bookTitle = copy?.edition?.work?.title || 'Unknown Book';
             await createNotification(
                 borrow.user.toString(),
                 'Book Overdue',
@@ -50,6 +57,10 @@ const checkDueNotifications = async () => {
             );
         }
         console.log(`Sent ${overdueBorrows.length} overdue notifications.`);
+
+        const { recalculatePriorities } = await import('./modules/reservation/reservation.service');
+        const priorityResult = await recalculatePriorities();
+        console.log(`Priorities recalculated: ${priorityResult.updated} updated, ${priorityResult.promoted} promoted.`);
 
         await mongoose.disconnect();
     } catch (error) {

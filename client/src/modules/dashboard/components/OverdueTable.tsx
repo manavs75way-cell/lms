@@ -6,7 +6,7 @@ interface OverdueTableProps {
 }
 
 const OverdueTable: React.FC<OverdueTableProps> = React.memo(({ data }) => {
-    const rows = useMemo(() => data, [data]);
+    const rows = useMemo(() => data ?? [], [data]);
 
     return (
         <div className="bg-white shadow sm:rounded-lg">

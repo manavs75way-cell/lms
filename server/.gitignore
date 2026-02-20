@@ -56,3 +56,15 @@ coverage
 
 # TypeScript
 *.tsbuildinfo
+
+# Generated public assets (barcodes / QR codes)
+public/barcodes/
+public/qrcodes/
+
+# Debug / test output files
+recommend_output.txt
+*.txt.log
+
+# Temporary files
+tmp/
+temp/

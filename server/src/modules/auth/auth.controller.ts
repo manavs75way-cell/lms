@@ -12,27 +12,21 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     try {
         const result = await authService.registerUser(req.body);
         res.status(201).json({ success: true, ...result });
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 };
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await authService.loginUser(req.body);
         res.status(200).json({ success: true, ...result });
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 };
 
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await authService.refreshAccessToken(req.body.refreshToken);
         res.status(200).json({ success: true, ...result });
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 };
 
 export const logout = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -41,9 +35,7 @@ export const logout = async (req: AuthenticatedRequest, res: Response, next: Nex
             await authService.logoutUser(req.user.userId);
         }
         res.status(200).json({ success: true, message: 'Logged out successfully' });
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 };
 
 export const me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -58,7 +50,16 @@ export const me = async (req: AuthenticatedRequest, res: Response, next: NextFun
             return;
         }
         res.status(200).json(user);
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
+};
+
+export const getChildAccounts = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ success: false, message: 'Not authenticated' });
+            return;
+        }
+        const children = await authService.getChildAccounts(req.user.userId);
+        res.status(200).json({ success: true, data: children });
+    } catch (error) { next(error); }
 };

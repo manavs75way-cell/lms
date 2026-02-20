@@ -1,42 +1,70 @@
 import { z } from 'zod';
 
-export const createBookSchema = z.object({
+
+export const createWorkSchema = z.object({
     body: z.object({
         title: z.string().min(1, 'Title is required'),
-        author: z.string().min(1, 'Author is required'),
-        isbn: z.string().min(10, 'ISBN must be at least 10 characters').max(13, 'ISBN cannot exceed 13 characters'),
-        coverImageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-        genre: z.string().min(1, 'Genre is required'),
-        publisher: z.string().min(1, 'Publisher is required'),
-        condition: z.enum(['NEW', 'GOOD', 'FAIR', 'DAMAGED']).default('GOOD'),
-        totalCopies: z.coerce.number().int().min(1, 'Total copies must be at least 1'),
-        branches: z.array(
-            z.object({
-                branch: z.string().min(1, 'Branch name is required'),
-                copyCount: z.coerce.number().int().min(1, 'Copy count must be at least 1')
-            })
-        ).optional(),
+        originalAuthor: z.string().min(1, 'Author is required'),
+        genres: z.array(z.string()).optional(),
+        description: z.string().optional(),
     }),
 });
 
-export const updateBookSchema = z.object({
-    params: z.object({
-        id: z.string().min(1, 'Book ID is required'),
-    }),
+export const updateWorkSchema = z.object({
+    params: z.object({ id: z.string().min(1) }),
     body: z.object({
         title: z.string().optional(),
-        author: z.string().optional(),
-        isbn: z.string().optional(),
-        coverImageUrl: z.string().url().optional(),
-        genre: z.string().optional(),
-        publisher: z.string().optional(),
-        condition: z.enum(['NEW', 'GOOD', 'FAIR', 'DAMAGED']).optional(),
-        totalCopies: z.number().int().min(0).optional(),
+        originalAuthor: z.string().optional(),
+        genres: z.array(z.string()).optional(),
+        description: z.string().optional(),
     }),
 });
 
-export const getBookSchema = z.object({
-    params: z.object({
-        id: z.string().min(1, 'Book ID is required'),
+
+export const createEditionSchema = z.object({
+    params: z.object({ workId: z.string().min(1) }),
+    body: z.object({
+        isbn: z.string().min(10).max(13),
+        format: z.enum(['HARDCOVER', 'PAPERBACK', 'AUDIOBOOK', 'EBOOK']),
+        publisher: z.string().min(1),
+        publicationYear: z.coerce.number().int().min(1000).max(2100),
+        language: z.string().optional(),
+        replacementCost: z.coerce.number().min(0).optional(),
     }),
+});
+
+export const updateEditionSchema = z.object({
+    params: z.object({ id: z.string().min(1) }),
+    body: z.object({
+        isbn: z.string().optional(),
+        format: z.enum(['HARDCOVER', 'PAPERBACK', 'AUDIOBOOK', 'EBOOK']).optional(),
+        publisher: z.string().optional(),
+        publicationYear: z.coerce.number().int().optional(),
+        language: z.string().optional(),
+        replacementCost: z.coerce.number().min(0).optional(),
+    }),
+});
+
+
+export const createCopySchema = z.object({
+    params: z.object({ editionId: z.string().min(1) }),
+    body: z.object({
+        copyCode: z.string().optional(),
+        owningLibrary: z.string().min(1, 'Owning library is required'),
+        currentLibrary: z.string().optional(),
+        condition: z.enum(['NEW', 'GOOD', 'FAIR', 'DAMAGED']).default('GOOD'),
+    }),
+});
+
+export const updateCopySchema = z.object({
+    params: z.object({ id: z.string().min(1) }),
+    body: z.object({
+        condition: z.enum(['NEW', 'GOOD', 'FAIR', 'DAMAGED']).optional(),
+        status: z.enum(['AVAILABLE', 'BORROWED', 'IN_TRANSIT', 'DAMAGED_PULLED', 'LOST']).optional(),
+        currentLibrary: z.string().optional(),
+    }),
+});
+
+export const getByIdSchema = z.object({
+    params: z.object({ id: z.string().min(1) }),
 });

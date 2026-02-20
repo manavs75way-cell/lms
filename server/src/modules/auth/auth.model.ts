@@ -6,8 +6,12 @@ export interface IUser extends Document {
     email: string;
     password: string;
     role: 'LIBRARIAN' | 'MEMBER' | 'ADMIN';
-    membershipTier: 'STUDENT' | 'ADULT' | 'PREMIUM';
+    membershipType: 'STANDARD' | 'PREMIUM' | 'ADULT' | 'STUDENT';
+    homeLibrary?: mongoose.Types.ObjectId;
+    globalBorrowLimit: number;
+    parentAccount?: mongoose.Types.ObjectId;
     barcodeUrl?: string;
+    qrCodeUrl?: string;
     refreshToken?: string;
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -18,8 +22,16 @@ const userSchema = new Schema<IUser>(
         email: { type: String, required: true, unique: true },
         password: { type: String, required: true },
         role: { type: String, enum: ['LIBRARIAN', 'MEMBER', 'ADMIN'], default: 'MEMBER' },
-        membershipTier: { type: String, enum: ['STUDENT', 'ADULT', 'PREMIUM'], default: 'STUDENT' },
+        membershipType: {
+            type: String,
+            enum: ['STANDARD', 'PREMIUM', 'ADULT', 'STUDENT'],
+            default: 'STANDARD',
+        },
+        homeLibrary: { type: Schema.Types.ObjectId, ref: 'Library' },
+        globalBorrowLimit: { type: Number, default: 5 },
+        parentAccount: { type: Schema.Types.ObjectId, ref: 'User' },
         barcodeUrl: { type: String },
+        qrCodeUrl: { type: String },
         refreshToken: { type: String },
     },
     { timestamps: true }

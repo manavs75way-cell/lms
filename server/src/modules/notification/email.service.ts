@@ -2,12 +2,11 @@
 import nodemailer from 'nodemailer';
 import { env } from '../../config/env';
 
-// Create a transporter
-// For dev, we can use Ethereal or just console.log if no creds
+
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.ethereal.email',
     port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
+    secure: false,
     auth: {
         user: process.env.SMTP_USER || 'ethereal_user',
         pass: process.env.SMTP_PASS || 'ethereal_pass',
@@ -16,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendEmail = async (to: string, subject: string, html: string) => {
     try {
-        if (env.NODE_ENV === 'test') return; // Skip in test mode
+        if (env.NODE_ENV === 'test') return;
 
         const info = await transporter.sendMail({
             from: '"LibrisSync Library" <noreply@library.com>',
@@ -26,13 +25,12 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
         });
 
         console.log(`Message sent: ${info.messageId}`);
-        // Preview only available when sending through an Ethereal account
+            
         if (nodemailer.getTestMessageUrl(info)) {
             console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
         }
     } catch (error) {
         console.error('Error sending email:', error);
-        // Don't throw, just log. Email failure shouldn't crash the app flow.
     }
 };
 

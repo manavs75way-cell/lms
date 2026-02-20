@@ -16,7 +16,7 @@ declare module 'multer-storage-cloudinary' {
 
     export class CloudinaryStorage implements StorageEngine {
         constructor(options: Options);
-        _handleFile(req: Request, file: Express.Multer.File, cb: (error?: any, info?: Partial<Express.Multer.File>) => void): void;
-        _removeFile(req: Request, file: Express.Multer.File, cb: (error?: any, info?: Partial<Express.Multer.File>) => void): void;
+        _handleFile(req: Request, file: Express.Multer.File, cb: (error?: Error | null, info?: Partial<Express.Multer.File>) => void): void;
+        _removeFile(req: Request, file: Express.Multer.File, cb: (error: Error | null) => void): void;
     }
 }
